@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# AI Task Assistant
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Next.js 16 + React 19 + TypeScript + Tailwind CSS 4 task manager with an AI agent that:
 
-Currently, two official plugins are available:
+- **Breaks down** a task into actionable sub-tasks with a suggested priority
+- **Prioritizes** open tasks by deadline and importance
+- **Summarizes** progress
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Tasks are CRUD-able (create, edit, delete, complete) and persisted in `localStorage`.
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `src/app/api/ai/{breakdown,prioritize,summary}` – thin route handlers
+- `src/lib/ai/agent.ts` – agent logic (prompting, response validation, fallback)
+- `src/lib/ai/llm.ts` – LLM client for the GitHub Models / Copilot gateway (OpenAI-compatible)
+- `src/lib/ai/heuristics.ts` – deterministic fallback so the app works without a key
+- `src/components`, `src/hooks` – UI and state
 
-## Expanding the Oxlint configuration
+## Run
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env.local   # optional: add GITHUB_TOKEN to enable the LLM
+npm run dev
+npm run lint && npm run typecheck && npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Without `GITHUB_TOKEN` the AI features use the heuristic fallback (UI labels which was used).
+
+## Deploy
+
+Import the repo in Vercel (zero config) and set `GITHUB_TOKEN` (needs `models:read`).
