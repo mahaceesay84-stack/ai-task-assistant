@@ -46,7 +46,7 @@ export default function TaskForm({
     }
   };
 
-  const input = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+  const input = "w-full rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 transition focus:border-indigo-500/70 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
   return (
     <form
       className="space-y-3"
@@ -58,26 +58,26 @@ export default function TaskForm({
       <input className={input} placeholder="What needs to be done?" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" maxLength={200} required />
       <textarea className={input} placeholder="Notes (optional)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Notes" maxLength={2000} />
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs font-medium text-slate-600">
+        <label className="text-xs font-medium text-slate-400">
           Due date
           <input type="date" className={`${input} mt-1`} value={due} onChange={(e) => setDue(e.target.value)} />
         </label>
-        <label className="text-xs font-medium text-slate-600">
+        <label className="text-xs font-medium text-slate-400">
           Importance: {importance}/5
-          <input type="range" min={1} max={5} value={importance} onChange={(e) => setImportance(Number(e.target.value))} className="mt-2 block" />
+          <input type="range" min={1} max={5} value={importance} onChange={(e) => setImportance(Number(e.target.value))} className="mt-2 block accent-indigo-500" />
         </label>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button disabled={disabled || busy} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
+        <button disabled={disabled || busy} className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700 disabled:opacity-50">
           {submitLabel}
         </button>
         {extra && (
-          <button type="button" disabled={disabled || busy || !title.trim()} onClick={() => void submit(true)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button type="button" disabled={disabled || busy || !title.trim()} onClick={() => void submit(true)} className="glow-btn rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 disabled:shadow-none">
             {busy ? "Thinking…" : "✨ Add with AI breakdown"}
           </button>
         )}
         {onCancel && (
-          <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-slate-400 hover:bg-slate-800">
             Cancel
           </button>
         )}

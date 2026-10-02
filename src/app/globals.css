@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+:root { color-scheme: dark; }
+body {
+  background-color: #020617;
+  background-image:
+    radial-gradient(60rem 30rem at 15% -10%, rgb(99 102 241 / 0.18), transparent 60%),
+    radial-gradient(50rem 28rem at 95% 0%, rgb(168 85 247 / 0.12), transparent 60%),
+    radial-gradient(40rem 24rem at 50% 110%, rgb(16 185 129 / 0.06), transparent 60%);
+  background-attachment: fixed;
+  font-feature-settings: "cv11", "ss01";
+}
+::selection { background: rgb(99 102 241 / 0.4); }
+.glass { background: rgb(15 23 42 / 0.6); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.glow-btn { box-shadow: 0 0 0 1px rgb(129 140 248 / 0.4), 0 4px 20px -4px rgb(99 102 241 / 0.6); }
+.glow-btn:hover:not(:disabled) { box-shadow: 0 0 0 1px rgb(165 180 252 / 0.6), 0 4px 28px -2px rgb(129 140 248 / 0.8); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fade-up 0.25s ease-out both; }
+@keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.4); opacity: 0; } }
+.pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .fade-up, .pulse-ring { animation: none; } }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
