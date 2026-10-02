@@ -40,9 +40,21 @@ export function useTasks() {
     setTasks((p) => [task, ...p]);
     return task.id;
   }, []);
-  const update = useCallback((id: string, patch: TaskPatch) => setTasks((p) => p.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t))), []);
+  const update = useCallback((id: string, patch: TaskPatch) => setTasks((p) => p.map((t) => {
+    if (t.id !== id) return t;
+    const changes = typeof patch === "function" ? patch(t) : patch;
+    return {
+      ...t,
+      ...changes,
+      priority: "medium",
+      aiReason: undefined,
+      aiSource: undefined,
+      aiRank: undefined,
+    };
+  })), []);
+  const updateWithAi = useCallback((id: string, patch: TaskPatch) => setTasks((p) => p.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t))), []);
   const remove = useCallback((id: string) => setTasks((p) => p.filter((t) => t.id !== id)), []);
   const replaceAll = useCallback((next: Task[] | ((current: Task[]) => Task[])) => setTasks(next), []);
 
-  return { tasks, loaded, storageError, add, update, remove, replaceAll };
+  return { tasks, loaded, storageError, add, update, updateWithAi, remove, replaceAll };
 }

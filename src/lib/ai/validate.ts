@@ -1,4 +1,4 @@
-import type { AiSource, Priority, SubTask, Task } from "../types";
+import { MAX_TASKS, type AiSource, type Priority, type SubTask, type Task } from "../types";
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 const SOURCES: AiSource[] = ["llm", "heuristic"];
@@ -60,7 +60,7 @@ function parseTask(value: unknown, strict: boolean): Task | null {
   ) return null;
   if (value.aiReason !== undefined && !isBoundedText(value.aiReason, maxReason, true)) return null;
   if (value.aiSource !== undefined && !isSource(value.aiSource)) return null;
-  if (value.aiRank !== undefined && (typeof value.aiRank !== "number" || !Number.isInteger(value.aiRank) || value.aiRank < 0 || (strict && value.aiRank > 200))) return null;
+  if (value.aiRank !== undefined && (typeof value.aiRank !== "number" || !Number.isInteger(value.aiRank) || value.aiRank < 0 || (strict && value.aiRank > MAX_TASKS))) return null;
 
   const task: Task = {
     id: value.id,
@@ -94,7 +94,7 @@ function parseTaskList(value: unknown, strict: boolean): Task[] {
 }
 
 export function parseTasks(value: unknown): Task[] | null {
-  if (!Array.isArray(value) || value.length > 200) return null;
+  if (!Array.isArray(value) || value.length > MAX_TASKS) return null;
   const tasks = parseTaskList(value, true);
   return tasks.length === value.length ? tasks : null;
 }
@@ -124,7 +124,7 @@ function parseAiTask(value: unknown): Task | null {
 }
 
 export function parseAiTasks(value: unknown): Task[] | null {
-  if (!Array.isArray(value) || value.length > 200) return null;
+  if (!Array.isArray(value) || value.length > MAX_TASKS) return null;
   const ids = new Set<string>();
   const tasks: Task[] = [];
   for (const item of value) {

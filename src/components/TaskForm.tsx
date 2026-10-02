@@ -15,12 +15,14 @@ export default function TaskForm({
   onSubmit,
   onCancel,
   extra,
+  disabled,
 }: {
   initial?: Pick<Task, "title" | "notes" | "dueDate" | "importance">;
   submitLabel: string;
   onSubmit: (d: TaskDraft, withAi: boolean) => void | Promise<void>;
   onCancel?: () => void;
   extra?: boolean;
+  disabled?: boolean;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
@@ -29,7 +31,7 @@ export default function TaskForm({
   const [busy, setBusy] = useState(false);
 
   const submit = async (withAi: boolean) => {
-    if (!title.trim()) return;
+    if (disabled || !title.trim()) return;
     setBusy(true);
     try {
       await onSubmit({ title: title.trim(), notes: notes.trim(), dueDate: due || null, importance }, withAi);
@@ -66,11 +68,11 @@ export default function TaskForm({
         </label>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button disabled={busy} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
+        <button disabled={disabled || busy} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
           {submitLabel}
         </button>
         {extra && (
-          <button type="button" disabled={busy || !title.trim()} onClick={() => void submit(true)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
+          <button type="button" disabled={disabled || busy || !title.trim()} onClick={() => void submit(true)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
             {busy ? "Thinking…" : "✨ Add with AI breakdown"}
           </button>
         )}

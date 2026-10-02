@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useTasks } from "@/hooks/useTasks";
 import { apiBreakdown, apiPrioritize } from "@/lib/api";
 import { score } from "@/lib/ai/heuristics";
-import type { Task } from "@/lib/types";
+import { MAX_TASKS, type Task } from "@/lib/types";
 import SummaryPanel from "./SummaryPanel";
 import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
@@ -11,7 +11,8 @@ import TaskItem from "./TaskItem";
 type Filter = "all" | "open" | "done";
 
 export default function TaskApp() {
-  const { tasks, loaded, storageError, add, update, remove, replaceAll } = useTasks();
+  const { tasks, loaded, storageError, add, update, updateWithAi, remove, replaceAll } = useTasks();
+  const atTaskLimit = tasks.length >= MAX_TASKS;
   const [filter, setFilter] = useState<Filter>("all");
   const [error, setError] = useState<string | null>(null);
   const [prioBusy, setPrioBusy] = useState(false);
@@ -31,7 +32,7 @@ export default function TaskApp() {
     setError(null);
     try {
       const r = await apiBreakdown(task);
-      update(task.id, (current) => ({
+      updateWithAi(task.id, (current) => ({
         subtasks: [...current.subtasks, ...toSubtasks(r.subtasks)],
         priority: r.priority,
         aiReason: r.reason,
@@ -67,14 +68,18 @@ export default function TaskApp() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight">AI Task Assistant</h1>
         <p className="mt-1 text-slate-600">Create tasks, let the agent break them down, prioritize by deadline, and summarize progress.</p>
+        <p className="mt-2 text-xs text-slate-500">When an AI feature uses a model, task titles and notes are processed by the configured AI model provider. Without a GITHUB_TOKEN, built-in heuristics run locally.</p>
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="mb-3 font-semibold">New task</h2>
+        {atTaskLimit && <p role="status" className="mb-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-800">Task limit reached ({MAX_TASKS} tasks). Delete a task before adding another.</p>}
         <TaskForm
           submitLabel="Add task"
+          disabled={atTaskLimit}
           extra
           onSubmit={async (d, withAi) => {
+            if (tasks.length >= MAX_TASKS) return;
             setError(null);
             if (!withAi) return void add(d);
             try {

@@ -4,6 +4,7 @@ const MAX_BODY_BYTES = 32 * 1024;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 30;
 const MAX_BUCKETS = 1_024;
+/** MVP-scoped: in-process buckets are not shared across multi-instance deployments. */
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
 type JsonResult =

@@ -24,7 +24,7 @@ function aiTask(task: Task) {
 }
 
 function aiTasks(tasks: Task[]) {
-  return tasks.slice(0, 200).map(aiTask);
+  return tasks.map(aiTask);
 }
 
 export const apiBreakdown = (t: Pick<Task, "title" | "notes" | "dueDate" | "importance">) => post<BreakdownResult>("/api/ai/breakdown", {
@@ -34,5 +34,5 @@ export const apiBreakdown = (t: Pick<Task, "title" | "notes" | "dueDate" | "impo
   importance: t.importance,
   today: localToday(),
 });
-export const apiPrioritize = (tasks: Task[]) => post<{ items: PrioritizeItem[]; source: AiSource }>("/api/ai/prioritize", { tasks: aiTasks(tasks), today: localToday() });
+export const apiPrioritize = (tasks: Task[]) => post<{ items: PrioritizeItem[]; source: AiSource }>("/api/ai/prioritize", { tasks: aiTasks(tasks.filter((task) => !task.done)), today: localToday() });
 export const apiSummary = (tasks: Task[]) => post<{ summary: string; source: AiSource }>("/api/ai/summary", { tasks: aiTasks(tasks), today: localToday() });

@@ -1,3 +1,5 @@
+export const MAX_TASKS = 200;
+
 export type Priority = "high" | "medium" | "low";
 
 export interface SubTask {
