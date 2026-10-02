@@ -11,7 +11,7 @@ import TaskItem from "./TaskItem";
 type Filter = "all" | "open" | "done";
 
 export default function TaskApp() {
-  const { tasks, loaded, add, update, remove, replaceAll } = useTasks();
+  const { tasks, loaded, storageError, add, update, remove, replaceAll } = useTasks();
   const [filter, setFilter] = useState<Filter>("all");
   const [error, setError] = useState<string | null>(null);
   const [prioBusy, setPrioBusy] = useState(false);
@@ -104,6 +104,7 @@ export default function TaskApp() {
           </button>
         </div>
         {error && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+        {storageError && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-700">{storageError}</p>}
         {loaded && visible.length === 0 && <p className="py-8 text-center text-slate-500">No tasks here yet.</p>}
         <ul className="space-y-3">
           {visible.map((t) => (

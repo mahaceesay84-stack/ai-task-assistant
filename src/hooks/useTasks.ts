@@ -10,6 +10,7 @@ const KEY = "ai-task-assistant:v1";
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -28,8 +29,9 @@ export function useTasks() {
     if (!loaded) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(tasks));
+      setStorageError(null);
     } catch {
-      return;
+      setStorageError("Tasks could not be saved in browser storage.");
     }
   }, [tasks, loaded]);
 
@@ -42,5 +44,5 @@ export function useTasks() {
   const remove = useCallback((id: string) => setTasks((p) => p.filter((t) => t.id !== id)), []);
   const replaceAll = useCallback((next: Task[] | ((current: Task[]) => Task[])) => setTasks(next), []);
 
-  return { tasks, loaded, add, update, remove, replaceAll };
+  return { tasks, loaded, storageError, add, update, remove, replaceAll };
 }

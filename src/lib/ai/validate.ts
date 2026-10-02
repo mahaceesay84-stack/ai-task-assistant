@@ -102,3 +102,36 @@ export function parseTasks(value: unknown): Task[] | null {
 export function parseStoredTasks(value: unknown): Task[] {
   return parseTaskList(value, false);
 }
+
+function parseAiTask(value: unknown): Task | null {
+  if (!isRecord(value) || !isBoundedText(value.id, 200) || !isBoundedText(value.title, 200) || !(value.dueDate === null || isValidDateOnly(value.dueDate)) || typeof value.importance !== "number" || !Number.isInteger(value.importance) || value.importance < 1 || value.importance > 5 || typeof value.done !== "boolean" || !Array.isArray(value.subtasks) || value.subtasks.length > 100) return null;
+  const subtasks: SubTask[] = [];
+  for (const [index, item] of value.subtasks.entries()) {
+    if (!isRecord(item) || typeof item.done !== "boolean") return null;
+    subtasks.push({ id: `subtask-${index}`, title: "", done: item.done });
+  }
+  return {
+    id: value.id,
+    title: value.title,
+    notes: "",
+    dueDate: value.dueDate,
+    priority: "medium",
+    importance: value.importance,
+    done: value.done,
+    subtasks,
+    createdAt: 0,
+  };
+}
+
+export function parseAiTasks(value: unknown): Task[] | null {
+  if (!Array.isArray(value) || value.length > 200) return null;
+  const ids = new Set<string>();
+  const tasks: Task[] = [];
+  for (const item of value) {
+    const task = parseAiTask(item);
+    if (!task || ids.has(task.id)) return null;
+    ids.add(task.id);
+    tasks.push(task);
+  }
+  return tasks;
+}

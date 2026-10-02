@@ -53,8 +53,8 @@ export default function TaskForm({
         void submit(false);
       }}
     >
-      <input className={input} placeholder="What needs to be done?" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" required />
-      <textarea className={input} placeholder="Notes (optional)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Notes" />
+      <input className={input} placeholder="What needs to be done?" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" maxLength={200} required />
+      <textarea className={input} placeholder="Notes (optional)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} aria-label="Notes" maxLength={2000} />
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs font-medium text-slate-600">
           Due date
