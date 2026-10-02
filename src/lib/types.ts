@@ -16,6 +16,8 @@ export interface Task {
   done: boolean;
   subtasks: SubTask[];
   aiReason?: string;
+  aiSource?: AiSource;
+  aiRank?: number;
   createdAt: number;
 }
 

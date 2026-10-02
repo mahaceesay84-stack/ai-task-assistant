@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
 import { breakdownTask } from "@/lib/ai/agent";
+import { readAiJson } from "@/lib/ai/gateway";
+import { isValidDateOnly } from "@/lib/ai/validate";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as { title?: unknown; notes?: unknown; dueDate?: unknown; importance?: unknown } | null;
-  if (!body || typeof body.title !== "string" || !body.title.trim()) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
-  }
-  const importance = typeof body.importance === "number" ? Math.min(5, Math.max(1, body.importance)) : 3;
+  const parsed = await readAiJson(req);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.value as { title?: unknown; notes?: unknown; dueDate?: unknown; importance?: unknown } | null;
+  const title = typeof body?.title === "string" ? body.title.trim().slice(0, 200) : "";
+  if (!title) return NextResponse.json({ error: "title is required" }, { status: 400 });
+
+  const importance = typeof body?.importance === "number" && Number.isFinite(body.importance)
+    ? Math.min(5, Math.max(1, Math.round(body.importance)))
+    : 3;
+  const dueDate = typeof body?.dueDate === "string" && isValidDateOnly(body.dueDate) ? body.dueDate : null;
   const result = await breakdownTask(
-    body.title.slice(0, 200),
-    typeof body.notes === "string" ? body.notes.slice(0, 2000) : "",
-    typeof body.dueDate === "string" ? body.dueDate : null,
+    title,
+    typeof body?.notes === "string" ? body.notes.slice(0, 2000) : "",
+    dueDate,
     importance,
   );
   return NextResponse.json(result);

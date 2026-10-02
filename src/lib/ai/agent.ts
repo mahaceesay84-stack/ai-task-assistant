@@ -4,17 +4,19 @@ import { chat, chatJson } from "./llm";
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 const isPriority = (v: unknown): v is Priority => PRIORITIES.includes(v as Priority);
+const isSubtask = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0 && v.length <= 200;
 
 export async function breakdownTask(title: string, notes: string, dueDate: string | null, importance: number): Promise<BreakdownResult> {
   const llm = await chatJson<{ subtasks?: unknown; priority?: unknown; reason?: unknown }>(
     'You are a task planning assistant. Break the task into 3-6 concrete, actionable sub-tasks and pick a priority. Schema: {"subtasks": string[], "priority": "high"|"medium"|"low", "reason": string}.',
     JSON.stringify({ title, notes, dueDate, importance, today: new Date().toISOString().slice(0, 10) }),
   );
-  if (llm && Array.isArray(llm.subtasks) && llm.subtasks.length && isPriority(llm.priority)) {
+  const subtasks = llm && Array.isArray(llm.subtasks) ? llm.subtasks : null;
+  if (subtasks && subtasks.length >= 3 && subtasks.length <= 6 && subtasks.every(isSubtask) && isPriority(llm?.priority)) {
     return {
-      subtasks: llm.subtasks.filter((s): s is string => typeof s === "string").slice(0, 8),
+      subtasks: subtasks.map((s) => s.trim()),
       priority: llm.priority,
-      reason: typeof llm.reason === "string" ? llm.reason : "",
+      reason: typeof llm.reason === "string" ? llm.reason.trim().slice(0, 500) : "",
       source: "llm",
     };
   }
@@ -24,18 +26,29 @@ export async function breakdownTask(title: string, notes: string, dueDate: strin
 
 export async function prioritizeTasks(tasks: Task[]): Promise<{ items: PrioritizeItem[]; source: AiSource }> {
   const open = tasks.filter((t) => !t.done);
-  const llm = await chatJson<{ items?: { id?: unknown; priority?: unknown; reason?: unknown }[] }>(
+  const llm = await chatJson<{ items?: unknown }>(
     'You prioritise tasks by deadline and importance. Return all given ids ordered most-urgent first. Schema: {"items":[{"id":string,"priority":"high"|"medium"|"low","reason":string}]}.',
     JSON.stringify({ today: new Date().toISOString().slice(0, 10), tasks: open.map((t) => ({ id: t.id, title: t.title, dueDate: t.dueDate, importance: t.importance })) }),
   );
   if (llm && Array.isArray(llm.items)) {
     const ids = new Set(open.map((t) => t.id));
-    const items = llm.items.flatMap((i): PrioritizeItem[] =>
-      typeof i.id === "string" && ids.has(i.id) && isPriority(i.priority)
-        ? [{ id: i.id, priority: i.priority, reason: typeof i.reason === "string" ? i.reason : "" }]
-        : [],
-    );
-    if (items.length === open.length) return { items, source: "llm" };
+    const seen = new Set<string>();
+    const items: PrioritizeItem[] = [];
+    let valid = ids.size === open.length;
+    for (const value of llm.items) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        valid = false;
+        break;
+      }
+      const item = value as { id?: unknown; priority?: unknown; reason?: unknown };
+      if (typeof item.id !== "string" || !ids.has(item.id) || seen.has(item.id) || !isPriority(item.priority)) {
+        valid = false;
+        break;
+      }
+      seen.add(item.id);
+      items.push({ id: item.id, priority: item.priority, reason: typeof item.reason === "string" ? item.reason.trim().slice(0, 500) : "" });
+    }
+    if (valid && items.length === open.length && seen.size === ids.size) return { items, source: "llm" };
   }
   return { items: heuristicPrioritize(tasks), source: "heuristic" };
 }

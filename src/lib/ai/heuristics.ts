@@ -3,10 +3,13 @@ import type { Priority, Task } from "../types";
 const DAY = 86_400_000;
 
 export function daysUntil(due: string | null, now = Date.now()): number | null {
-  if (!due) return null;
-  const t = new Date(`${due}T23:59:59`).getTime();
-  if (Number.isNaN(t)) return null;
-  return Math.ceil((t - now) / DAY);
+  if (!due || !/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+  const dueDate = new Date(`${due}T00:00:00Z`);
+  if (Number.isNaN(dueDate.getTime()) || dueDate.toISOString().slice(0, 10) !== due) return null;
+  const today = new Date(now);
+  if (Number.isNaN(today.getTime())) return null;
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((dueDate.getTime() - todayUtc) / DAY);
 }
 
 /** Score 0..100 from deadline urgency + importance. */

@@ -18,7 +18,11 @@ export default function TaskApp() {
 
   const visible = useMemo(() => {
     const list = tasks.filter((t) => (filter === "all" ? true : filter === "done" ? t.done : !t.done));
-    return [...list].sort((a, b) => Number(a.done) - Number(b.done) || score(b) - score(a));
+    return [...list].sort((a, b) => {
+      const rankA = a.aiRank ?? Number.MAX_SAFE_INTEGER;
+      const rankB = b.aiRank ?? Number.MAX_SAFE_INTEGER;
+      return Number(a.done) - Number(b.done) || rankA - rankB || score(b) - score(a);
+    });
   }, [tasks, filter]);
 
   const toSubtasks = (titles: string[]) => titles.map((title) => ({ id: crypto.randomUUID(), title, done: false }));
@@ -27,7 +31,13 @@ export default function TaskApp() {
     setError(null);
     try {
       const r = await apiBreakdown(task);
-      update(task.id, { subtasks: [...task.subtasks, ...toSubtasks(r.subtasks)], priority: r.priority, aiReason: r.reason });
+      update(task.id, (current) => ({
+        subtasks: [...current.subtasks, ...toSubtasks(r.subtasks)],
+        priority: r.priority,
+        aiReason: r.reason,
+        aiSource: r.source,
+        aiRank: undefined,
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI request failed");
     }
@@ -37,9 +47,14 @@ export default function TaskApp() {
     setError(null);
     setPrioBusy(true);
     try {
-      const { items } = await apiPrioritize(tasks);
-      const map = new Map(items.map((i) => [i.id, i]));
-      replaceAll(tasks.map((t) => (map.has(t.id) ? { ...t, priority: map.get(t.id)!.priority, aiReason: map.get(t.id)!.reason } : t)));
+      const { items, source } = await apiPrioritize(tasks);
+      const map = new Map(items.map((item, rank) => [item.id, { ...item, rank }] as const));
+      replaceAll((current) => current.map((task) => {
+        const item = map.get(task.id);
+        return item
+          ? { ...task, priority: item.priority, aiReason: item.reason, aiSource: source, aiRank: item.rank }
+          : task;
+      }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI request failed");
     } finally {
@@ -64,7 +79,7 @@ export default function TaskApp() {
             if (!withAi) return void add(d);
             try {
               const r = await apiBreakdown(d);
-              add({ ...d, priority: r.priority, aiReason: r.reason, subtasks: toSubtasks(r.subtasks) });
+              add({ ...d, priority: r.priority, aiReason: r.reason, aiSource: r.source, subtasks: toSubtasks(r.subtasks) });
             } catch (e) {
               add(d);
               setError(e instanceof Error ? e.message : "AI request failed");

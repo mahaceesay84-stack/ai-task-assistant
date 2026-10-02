@@ -43,6 +43,7 @@ export default function TaskItem({
   }
 
   const doneSubs = task.subtasks.filter((s) => s.done).length;
+  const aiLabel = task.aiSource === "llm" ? "LLM" : task.aiSource === "heuristic" ? "Heuristic" : null;
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
@@ -54,7 +55,7 @@ export default function TaskItem({
             {task.dueDate && <span className={`text-xs ${overdue ? "font-semibold text-red-600" : "text-slate-500"}`}>{overdue ? "Overdue · " : "Due "}{task.dueDate}</span>}
           </div>
           {task.notes && <p className="mt-1 text-sm text-slate-600">{task.notes}</p>}
-          {task.aiReason && <p className="mt-1 text-xs italic text-indigo-600">AI: {task.aiReason}</p>}
+          {task.aiReason && aiLabel && <p className="mt-1 text-xs italic text-indigo-600">{aiLabel}: {task.aiReason}</p>}
           {task.subtasks.length > 0 && (
             <div className="mt-2">
               <p className="text-xs text-slate-500">Sub-tasks {doneSubs}/{task.subtasks.length}</p>

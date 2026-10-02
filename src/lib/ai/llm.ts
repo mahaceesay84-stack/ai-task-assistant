@@ -20,6 +20,7 @@ export async function chat(system: string, user: string, json: boolean): Promise
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.3,
+        max_tokens: 1200,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
