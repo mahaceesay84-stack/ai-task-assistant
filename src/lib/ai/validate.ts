@@ -27,25 +27,30 @@ function isSource(value: unknown): value is AiSource {
   return SOURCES.includes(value as AiSource);
 }
 
-function parseSubtasks(value: unknown): SubTask[] | null {
-  if (!Array.isArray(value) || value.length > 100) return null;
+function parseSubtasks(value: unknown, strict: boolean): SubTask[] | null {
+  const maxItems = strict ? 100 : Infinity;
+  const maxText = strict ? 200 : Infinity;
+  if (!Array.isArray(value) || value.length > maxItems) return null;
   const ids = new Set<string>();
   const subtasks: SubTask[] = [];
   for (const item of value) {
-    if (!isRecord(item) || !isBoundedText(item.id, 200) || !isBoundedText(item.title, 200) || typeof item.done !== "boolean" || ids.has(item.id)) return null;
+    if (!isRecord(item) || !isBoundedText(item.id, maxText) || !isBoundedText(item.title, maxText) || typeof item.done !== "boolean" || ids.has(item.id)) return null;
     ids.add(item.id);
     subtasks.push({ id: item.id, title: item.title, done: item.done });
   }
   return subtasks;
 }
 
-function parseTask(value: unknown): Task | null {
+function parseTask(value: unknown, strict: boolean): Task | null {
   if (!isRecord(value)) return null;
-  const subtasks = parseSubtasks(value.subtasks);
+  const maxIdAndTitle = strict ? 200 : Infinity;
+  const maxNotes = strict ? 2000 : Infinity;
+  const maxReason = strict ? 500 : Infinity;
+  const subtasks = parseSubtasks(value.subtasks, strict);
   if (
-    !isBoundedText(value.id, 200) ||
-    !isBoundedText(value.title, 200) ||
-    !isBoundedText(value.notes, 2000, true) ||
+    !isBoundedText(value.id, maxIdAndTitle) ||
+    !isBoundedText(value.title, maxIdAndTitle) ||
+    !isBoundedText(value.notes, maxNotes, true) ||
     !(value.dueDate === null || isValidDateOnly(value.dueDate)) ||
     !isPriority(value.priority) ||
     typeof value.importance !== "number" || !Number.isInteger(value.importance) || value.importance < 1 || value.importance > 5 ||
@@ -53,9 +58,9 @@ function parseTask(value: unknown): Task | null {
     !subtasks ||
     typeof value.createdAt !== "number" || !Number.isFinite(value.createdAt) || value.createdAt < 0
   ) return null;
-  if (value.aiReason !== undefined && !isBoundedText(value.aiReason, 500, true)) return null;
+  if (value.aiReason !== undefined && !isBoundedText(value.aiReason, maxReason, true)) return null;
   if (value.aiSource !== undefined && !isSource(value.aiSource)) return null;
-  if (value.aiRank !== undefined && (typeof value.aiRank !== "number" || !Number.isInteger(value.aiRank) || value.aiRank < 0 || value.aiRank > 200)) return null;
+  if (value.aiRank !== undefined && (typeof value.aiRank !== "number" || !Number.isInteger(value.aiRank) || value.aiRank < 0 || (strict && value.aiRank > 200))) return null;
 
   const task: Task = {
     id: value.id,
@@ -74,15 +79,26 @@ function parseTask(value: unknown): Task | null {
   return task;
 }
 
-export function parseTasks(value: unknown): Task[] | null {
-  if (!Array.isArray(value) || value.length > 200) return null;
+function parseTaskList(value: unknown, strict: boolean): Task[] {
+  if (!Array.isArray(value)) return [];
   const ids = new Set<string>();
   const tasks: Task[] = [];
   for (const item of value) {
-    const task = parseTask(item);
-    if (!task || ids.has(task.id)) return null;
-    ids.add(task.id);
-    tasks.push(task);
+    const task = parseTask(item, strict);
+    if (task && !ids.has(task.id)) {
+      ids.add(task.id);
+      tasks.push(task);
+    }
   }
   return tasks;
+}
+
+export function parseTasks(value: unknown): Task[] | null {
+  if (!Array.isArray(value) || value.length > 200) return null;
+  const tasks = parseTaskList(value, true);
+  return tasks.length === value.length ? tasks : null;
+}
+
+export function parseStoredTasks(value: unknown): Task[] {
+  return parseTaskList(value, false);
 }

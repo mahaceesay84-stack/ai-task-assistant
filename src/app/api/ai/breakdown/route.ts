@@ -6,7 +6,7 @@ import { isValidDateOnly } from "@/lib/ai/validate";
 export async function POST(req: Request) {
   const parsed = await readAiJson(req);
   if (!parsed.ok) return parsed.response;
-  const body = parsed.value as { title?: unknown; notes?: unknown; dueDate?: unknown; importance?: unknown } | null;
+  const body = parsed.value as { title?: unknown; notes?: unknown; dueDate?: unknown; importance?: unknown; today?: unknown } | null;
   const title = typeof body?.title === "string" ? body.title.trim().slice(0, 200) : "";
   if (!title) return NextResponse.json({ error: "title is required" }, { status: 400 });
 
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     typeof body?.notes === "string" ? body.notes.slice(0, 2000) : "",
     dueDate,
     importance,
+    typeof body?.today === "string" && isValidDateOnly(body.today) ? body.today : undefined,
   );
   return NextResponse.json(result);
 }

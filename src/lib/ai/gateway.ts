@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 const MAX_BODY_BYTES = 32 * 1024;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 30;
+const MAX_BUCKETS = 1_024;
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
 type JsonResult =
@@ -10,18 +11,39 @@ type JsonResult =
   | { ok: false; response: NextResponse };
 
 function clientKey(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || req.headers.get("x-real-ip") || "anonymous";
+  return req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+}
+
+function pruneBuckets(now: number): void {
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}
+
+function reserveBucket(key: string, now: number): { count: number; resetAt: number } {
+  pruneBuckets(now);
+  const existing = buckets.get(key);
+  if (existing) return existing;
+  if (buckets.size >= MAX_BUCKETS) {
+    let oldestKey: string | undefined;
+    let oldestReset = Infinity;
+    for (const [candidateKey, bucket] of buckets) {
+      if (bucket.resetAt < oldestReset) {
+        oldestKey = candidateKey;
+        oldestReset = bucket.resetAt;
+      }
+    }
+    if (oldestKey) buckets.delete(oldestKey);
+  }
+  const bucket = { count: 0, resetAt: now + WINDOW_MS };
+  buckets.set(key, bucket);
+  return bucket;
 }
 
 function rateLimitResponse(req: Request): NextResponse | null {
   const now = Date.now();
   const key = clientKey(req);
-  const bucket = buckets.get(key);
-  if (!bucket || bucket.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return null;
-  }
+  const bucket = reserveBucket(key, now);
   if (bucket.count >= MAX_REQUESTS) {
     return NextResponse.json(
       { error: "rate limit exceeded" },

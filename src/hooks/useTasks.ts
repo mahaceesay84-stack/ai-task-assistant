@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { parseTasks } from "@/lib/ai/validate";
+import { parseStoredTasks } from "@/lib/ai/validate";
 import type { Task } from "@/lib/types";
 
 type TaskPatch = Partial<Task> | ((task: Task) => Partial<Task>);
@@ -15,8 +15,7 @@ export function useTasks() {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
-        const parsed = parseTasks(JSON.parse(raw));
-        if (parsed) setTasks(parsed);
+        setTasks(parseStoredTasks(JSON.parse(raw)));
       }
     } catch {
       setLoaded(true);
