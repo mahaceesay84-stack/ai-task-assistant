@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useTasks } from "@/hooks/useTasks";
 import { apiBreakdown, apiPrioritize } from "@/lib/api";
 import { score } from "@/lib/ai/heuristics";
-import { MAX_TASKS, type Task } from "@/lib/types";
+import { MAX_TASKS, sameTaskSnapshot, type Task } from "@/lib/types";
 import SummaryPanel from "./SummaryPanel";
 import TaskForm from "./TaskForm";
 import TaskItem from "./TaskItem";
@@ -32,7 +32,7 @@ export default function TaskApp() {
     setError(null);
     try {
       const r = await apiBreakdown(task);
-      updateWithAi(task.id, (current) => ({
+      updateWithAi(task.id, task, (current) => ({
         subtasks: [...current.subtasks, ...toSubtasks(r.subtasks)],
         priority: r.priority,
         aiReason: r.reason,
@@ -48,14 +48,18 @@ export default function TaskApp() {
     setError(null);
     setPrioBusy(true);
     try {
-      const { items, source } = await apiPrioritize(tasks);
+      const snapshot = tasks;
+      const { items, source } = await apiPrioritize(snapshot);
       const map = new Map(items.map((item, rank) => [item.id, { ...item, rank }] as const));
-      replaceAll((current) => current.map((task) => {
-        const item = map.get(task.id);
-        return item
-          ? { ...task, priority: item.priority, aiReason: item.reason, aiSource: source, aiRank: item.rank }
-          : task;
-      }));
+      replaceAll((current) => {
+        if (!sameTaskSnapshot(current, snapshot)) return current;
+        return current.map((task) => {
+          const item = map.get(task.id);
+          return item
+            ? { ...task, priority: item.priority, aiReason: item.reason, aiSource: source, aiRank: item.rank }
+            : task;
+        });
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI request failed");
     } finally {

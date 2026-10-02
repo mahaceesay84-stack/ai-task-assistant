@@ -1,14 +1,12 @@
-import type { AiSource, BreakdownResult, Priority, PrioritizeItem, Task } from "../types";
-import { heuristicBreakdown, heuristicPrioritize, heuristicSummary, priorityFromScore, score } from "./heuristics";
+import { isPriority, type AiSource, type BreakdownResult, type PrioritizeItem, type Task } from "../types";
+import { heuristicBreakdown, heuristicPrioritize, heuristicSummary, localDate, priorityFromScore, score } from "./heuristics";
 import { chat, chatJson } from "./llm";
 import { isValidDateOnly } from "./validate";
 
-const PRIORITIES: Priority[] = ["high", "medium", "low"];
-const isPriority = (v: unknown): v is Priority => PRIORITIES.includes(v as Priority);
 const isSubtask = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0 && v.length <= 200;
 
 function requestDate(today?: string): string {
-  return isValidDateOnly(today) ? today : new Date().toISOString().slice(0, 10);
+  return isValidDateOnly(today) ? today : localDate(new Date());
 }
 
 export async function breakdownTask(title: string, notes: string, dueDate: string | null, importance: number, today?: string): Promise<BreakdownResult> {

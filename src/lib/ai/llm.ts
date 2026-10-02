@@ -6,10 +6,6 @@
 const ENDPOINT = process.env.LLM_ENDPOINT ?? "https://models.github.ai/inference/chat/completions";
 const MODEL = process.env.LLM_MODEL ?? "openai/gpt-4.1-mini";
 
-export function llmAvailable(): boolean {
-  return Boolean(process.env.GITHUB_TOKEN);
-}
-
 export async function chat(system: string, user: string, json: boolean): Promise<string | null> {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return null;

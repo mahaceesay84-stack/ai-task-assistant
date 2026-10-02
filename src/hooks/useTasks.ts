@@ -10,30 +10,33 @@ const KEY = "ai-task-assistant:v1";
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) {
-        setTasks(parseStoredTasks(JSON.parse(raw)));
+      if (raw !== null) {
+        const parsed = parseStoredTasks(JSON.parse(raw));
+        if (parsed === null) throw new Error("invalid stored tasks");
+        setTasks(parsed);
       }
+      setStorageReady(true);
     } catch {
-      setLoaded(true);
-      return;
+      setStorageError("Saved tasks could not be loaded. Existing data was preserved.");
     }
     setLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !storageReady) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(tasks));
       setStorageError(null);
     } catch {
       setStorageError("Tasks could not be saved in browser storage.");
     }
-  }, [tasks, loaded]);
+  }, [tasks, loaded, storageReady]);
 
   const add = useCallback((t: Omit<Task, "id" | "createdAt" | "done" | "subtasks" | "priority"> & Partial<Pick<Task, "subtasks" | "priority" | "aiReason" | "aiSource" | "aiRank">>) => {
     const task: Task = { priority: "medium", subtasks: [], ...t, id: crypto.randomUUID(), createdAt: Date.now(), done: false };
@@ -52,7 +55,10 @@ export function useTasks() {
       aiRank: undefined,
     };
   })), []);
-  const updateWithAi = useCallback((id: string, patch: TaskPatch) => setTasks((p) => p.map((t) => (t.id === id ? { ...t, ...(typeof patch === "function" ? patch(t) : patch) } : t))), []);
+  const updateWithAi = useCallback((id: string, expected: Task, patch: TaskPatch) => setTasks((p) => p.map((t) => {
+    if (t.id !== id || t !== expected) return t;
+    return { ...t, ...(typeof patch === "function" ? patch(t) : patch) };
+  })), []);
   const remove = useCallback((id: string) => setTasks((p) => p.filter((t) => t.id !== id)), []);
   const replaceAll = useCallback((next: Task[] | ((current: Task[]) => Task[])) => setTasks(next), []);
 

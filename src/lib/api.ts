@@ -1,10 +1,5 @@
 import type { AiSource, BreakdownResult, PrioritizeItem, Task } from "./types";
-
-function localToday(): string {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
+import { localDate } from "./ai/heuristics";
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -32,7 +27,7 @@ export const apiBreakdown = (t: Pick<Task, "title" | "notes" | "dueDate" | "impo
   notes: t.notes.slice(0, 2000),
   dueDate: t.dueDate,
   importance: t.importance,
-  today: localToday(),
+  today: localDate(new Date()),
 });
-export const apiPrioritize = (tasks: Task[]) => post<{ items: PrioritizeItem[]; source: AiSource }>("/api/ai/prioritize", { tasks: aiTasks(tasks.filter((task) => !task.done)), today: localToday() });
-export const apiSummary = (tasks: Task[]) => post<{ summary: string; source: AiSource }>("/api/ai/summary", { tasks: aiTasks(tasks), today: localToday() });
+export const apiPrioritize = (tasks: Task[]) => post<{ items: PrioritizeItem[]; source: AiSource }>("/api/ai/prioritize", { tasks: aiTasks(tasks.filter((task) => !task.done)), today: localDate(new Date()) });
+export const apiSummary = (tasks: Task[]) => post<{ summary: string; source: AiSource }>("/api/ai/summary", { tasks: aiTasks(tasks), today: localDate(new Date()) });

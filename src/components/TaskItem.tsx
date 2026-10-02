@@ -43,7 +43,7 @@ export default function TaskItem({
   }
 
   const doneSubs = task.subtasks.filter((s) => s.done).length;
-  const aiLabel = task.aiSource === "llm" ? "LLM" : task.aiSource === "heuristic" ? "Heuristic" : null;
+  const aiLabel = task.aiSource === "llm" ? "LLM" : task.aiSource === "heuristic" ? "Heuristic" : task.aiReason !== undefined ? "AI (source unknown)" : null;
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">

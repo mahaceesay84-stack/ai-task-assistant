@@ -8,7 +8,7 @@ function parseDateOnly(value: string): Date | null {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null;
 }
 
-function localDate(now: Date): string {
+export function localDate(now: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }

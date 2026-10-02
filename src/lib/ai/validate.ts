@@ -1,6 +1,5 @@
-import { MAX_TASKS, type AiSource, type Priority, type SubTask, type Task } from "../types";
+import { isPriority, MAX_TASKS, type AiSource, type SubTask, type Task } from "../types";
 
-const PRIORITIES: Priority[] = ["high", "medium", "low"];
 const SOURCES: AiSource[] = ["llm", "heuristic"];
 
 type RecordValue = Record<string, unknown>;
@@ -17,10 +16,6 @@ export function isValidDateOnly(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
-
-function isPriority(value: unknown): value is Priority {
-  return PRIORITIES.includes(value as Priority);
 }
 
 function isSource(value: unknown): value is AiSource {
@@ -93,14 +88,10 @@ function parseTaskList(value: unknown, strict: boolean): Task[] {
   return tasks;
 }
 
-export function parseTasks(value: unknown): Task[] | null {
-  if (!Array.isArray(value) || value.length > MAX_TASKS) return null;
-  const tasks = parseTaskList(value, true);
+export function parseStoredTasks(value: unknown): Task[] | null {
+  if (!Array.isArray(value)) return null;
+  const tasks = parseTaskList(value, false);
   return tasks.length === value.length ? tasks : null;
-}
-
-export function parseStoredTasks(value: unknown): Task[] {
-  return parseTaskList(value, false);
 }
 
 function parseAiTask(value: unknown): Task | null {

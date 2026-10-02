@@ -1,6 +1,11 @@
 export const MAX_TASKS = 200;
+export const PRIORITIES = ["high", "medium", "low"] as const;
 
-export type Priority = "high" | "medium" | "low";
+export type Priority = (typeof PRIORITIES)[number];
+
+export function isPriority(value: unknown): value is Priority {
+  return PRIORITIES.includes(value as Priority);
+}
 
 export interface SubTask {
   id: string;
@@ -21,6 +26,10 @@ export interface Task {
   aiSource?: AiSource;
   aiRank?: number;
   createdAt: number;
+}
+
+export function sameTaskSnapshot(current: Task[], snapshot: Task[]): boolean {
+  return current.length === snapshot.length && current.every((task, index) => task === snapshot[index]);
 }
 
 export interface BreakdownResult {

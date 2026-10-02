@@ -12,7 +12,10 @@ type JsonResult =
   | { ok: false; response: NextResponse };
 
 function clientKey(req: Request): string {
-  return req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+  if (process.env.VERCEL === "1") {
+    return req.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+  }
+  return "anonymous";
 }
 
 function pruneBuckets(now: number): void {
